@@ -52,3 +52,16 @@ steps:
     command: 'build'                # 运行 dotnet build命令，构建项目
     arguments: '--no-restore --configuration Release'
     projects: '**/*.csproj'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish the project - Release'
+  inputs:
+    command: 'publish'              # 将构建好的项目 发布or打zip包
+    projects: '**/*.csproj'
+    publishWebProjects: false				# 不发布
+    arguments: '--no-build --configuration Release --output $(Build.ArtifactStagingDirectory)/Release'
+    zipAfterPublish: true					  # 而是打zip包
+
+- task: PublishBuildArtifacts@1			# 将 zip包发布到 Pipeline
+  displayName: 'Publish Artifact: drop'
+  condition: succeeded()					  # success(): 代表上个命令(dotnet publish)成功后，才执行该命令
