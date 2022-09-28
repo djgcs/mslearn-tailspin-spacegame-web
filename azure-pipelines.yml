@@ -3,15 +3,52 @@
 # Add steps that run tests, create a NuGet package, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
-trigger:
-- main
+trigger:                            # 指定触发构建的分支（某分支提交时，开始执行这个构建），'*'代表任意分支'
+#- main
+- '*'
 
 pool:
-  vmImage: ubuntu-latest
+#  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-20.04'
+  demands:                          # 指定在一次性 unbuntu虚拟机上安装 npm
+  - npm
 
 variables:
-  buildConfiguration: 'Release'
+  buildConfiguration: 'Release'     # 使用 Release模板 构建程序
 
 steps:
-- script: dotnet build --configuration $(buildConfiguration)
-  displayName: 'dotnet build $(buildConfiguration)'
+#- script: dotnet build --configuration $(buildConfiguration)
+#  displayName: 'dotnet build $(buildConfiguration)'
+- task: UseDotNet@2                 # UseDotNet@2: 指定使用那个版本的 .net sdk
+  displayName: 'Use .NET SDK 6.x'
+  inputs:
+    packageType: sdk
+    version: '6.x'
+
+- task: Npm@1                       # 运行 npm install命令
+  displayName: 'Run npm install'
+  inputs:
+    verbose: false
+
+- script: './node_modules/.bin/node-sass Tailspin.SpaceGame.Web/wwwroot --output Tailspin.SpaceGame.Web/wwwroot'  #运行 node-sass命令，用于将 sass转换为 css
+  displayName: 'Compile Sass assets'
+
+- task: gulp@1                      # 运行 gulp命令，用于压缩 js & css
+  displayName: 'Run gulp tasks'
+
+- script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'  # Build.DefinitionName（管道名称）：SpaceGame-Web-CI 
+  displayName: 'Write build info'                                                                   # Build.BuildId（已完成的 job编号）：115
+  workingDirectory: Tailspin.SpaceGame.Web/wwwroot                                                  # Build.BuildNumber（已完成的 job名称）：20190329.1
+
+- task: DotNetCoreCLI@2
+  displayName: 'Restore project dependencies'
+  inputs:
+    command: 'restore'              # 运行 dotnet restore命令
+    projects: '**/*.csproj'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build the project - Release'
+  inputs:
+    command: 'build'                # 运行 dotnet build命令，构建项目
+    arguments: '--no-restore --configuration Release'
+    projects: '**/*.csproj'
