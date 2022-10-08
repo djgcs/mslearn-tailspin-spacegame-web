@@ -49,21 +49,29 @@ steps:
     command: 'restore'              # 运行 dotnet restore命令
     projects: '**/*.csproj'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Build the project - $(buildConfiguration)'
-  inputs:
-    command: 'build'                # 运行 dotnet build命令，构建项目
-    arguments: '--no-restore --configuration $(buildConfiguration)'
-    projects: '**/*.csproj'
+#- task: DotNetCoreCLI@2
+#  displayName: 'Build the project - $(buildConfiguration)'
+#  inputs:
+#    command: 'build'                # 运行 dotnet build命令，构建项目
+#    arguments: '--no-restore --configuration $(buildConfiguration)'
+#    projects: '**/*.csproj'
+#
+#- task: DotNetCoreCLI@2
+#  displayName: 'Publish the project - $(buildConfiguration)'
+#  inputs:
+#    command: 'publish'              # 将构建好的项目 发布or打zip包
+#    projects: '**/*.csproj'
+#    publishWebProjects: false				# 不发布
+#    arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
+#    zipAfterPublish: true					  # 而是打zip包
 
-- task: DotNetCoreCLI@2
-  displayName: 'Publish the project - $(buildConfiguration)'
-  inputs:
-    command: 'publish'              # 将构建好的项目 发布or打zip包
-    projects: '**/*.csproj'
-    publishWebProjects: false				# 不发布
-    arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
-    zipAfterPublish: true					  # 而是打zip包
+- template: templates/build.yml
+  parameters:
+    buildConfiguration: 'Debug'
+
+- template: templates/build.yml
+  parameters:
+    buildConfiguration: 'Release'
 
 - task: PublishBuildArtifacts@1			# 将 zip包发布到 Pipeline
   displayName: 'Publish Artifact: drop'
