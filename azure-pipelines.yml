@@ -1,78 +1,59 @@
-# ASP.NET Core
-# Build and test ASP.NET Core projects targeting .NET Core.
-# Add steps that run tests, create a NuGet package, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
-trigger:                            # 指定触发构建的分支（某分支提交时，开始执行这个构建），'*'代表任意分支'
-#- main
+trigger:
 - '*'
 
 pool:
-#  vmImage: ubuntu-latest
   vmImage: 'ubuntu-20.04'
-  demands:                          # 指定在一次性 unbuntu虚拟机上安装 npm
+  demands:
   - npm
 
-variables:                                      # variables: 定义变量
-  buildConfiguration: 'Release'                 # 变量 buildConfiguration，值为'Release'。该变量为 dotnet build命令的后面的参数，代表使用 Release模板 build程序
-  wwwrootdir: 'Tailspin.SpaceGame.Web/wwwroot'  # 变量 wwwrootdir用于设置 sass命令对应的 css目录
-  dotnetSdkVersion: '6.x'                       # 设置 dotnet版本
-
+variables:
+  buildConfiguration: 'Release'
+  wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
+  dotnetSdkVersion: '6.x'
 
 steps:
-#- script: dotnet build --configuration $(buildConfiguration)
-#  displayName: 'dotnet build $(buildConfiguration)'
-- task: UseDotNet@2                 # UseDotNet@2: 指定使用那个版本的 .net sdk
+- task: UseDotNet@2
   displayName: 'Use .NET SDK $(dotnetSdkVersion)'
   inputs:
-    packageType: sdk
-    version: $(dotnetSdkVersion)
+    version: '$(dotnetSdkVersion)'
 
-- task: Npm@1                       # 运行 npm install命令
+- task: Npm@1
   displayName: 'Run npm install'
   inputs:
     verbose: false
 
-- script: './node_modules/.bin/node-sass $(wwwrootdir) --output $(wwwrootdir)'  #运行 node-sass命令，用于将 sass转换为 css
+- script: './node_modules/.bin/node-sass $(wwwrootDir) --output $(wwwrootDir)'
   displayName: 'Compile Sass assets'
 
-- task: gulp@1                      # 运行 gulp命令，用于压缩 js & css
+- task: gulp@1
   displayName: 'Run gulp tasks'
 
-- script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'  # Build.DefinitionName（管道名称）：内置变量SpaceGame-Web-CI 
-  displayName: 'Write build info'                                                                   # Build.BuildId（已完成的 job编号）：115
-  workingDirectory: $(wwwrootdir)                                                                   # Build.BuildNumber（已完成的 job名称）：20190329.1
+- script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
+  displayName: 'Write build info'
+  workingDirectory: $(wwwrootDir)
 
 - task: DotNetCoreCLI@2
   displayName: 'Restore project dependencies'
   inputs:
-    command: 'restore'              # 运行 dotnet restore命令
+    command: 'restore'
     projects: '**/*.csproj'
 
-#- task: DotNetCoreCLI@2
-#  displayName: 'Build the project - $(buildConfiguration)'
-#  inputs:
-#    command: 'build'                # 运行 dotnet build命令，构建项目
-#    arguments: '--no-restore --configuration $(buildConfiguration)'
-#    projects: '**/*.csproj'
-#
-#- task: DotNetCoreCLI@2
-#  displayName: 'Publish the project - $(buildConfiguration)'
-#  inputs:
-#    command: 'publish'              # 将构建好的项目 发布or打zip包
-#    projects: '**/*.csproj'
-#    publishWebProjects: false				# 不发布
-#    arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
-#    zipAfterPublish: true					  # 而是打zip包
+- task: DotNetCoreCLI@2
+  displayName: 'Build the project - $(buildConfiguration)'
+  inputs:
+    command: 'build'
+    arguments: '--no-restore --configuration $(buildConfiguration)'
+    projects: '**/*.csproj'
 
-- template: templates/build.yml
-  parameters:
-    buildConfiguration: 'Debug'
+- task: DotNetCoreCLI@2
+  displayName: 'Publish the project - $(buildConfiguration)'
+  inputs:
+    command: 'publish'
+    projects: '**/*.csproj'
+    publishWebProjects: false
+    arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
+    zipAfterPublish: true
 
-- template: templates/build.yml
-  parameters:
-    buildConfiguration: 'Release'
-
-- task: PublishBuildArtifacts@1			# 将 zip包发布到 Pipeline
+- task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: drop'
-  condition: succeeded()					  # success(): 代表上个命令(dotnet publish)成功后，才执行该命令
+  condition: succeeded()
