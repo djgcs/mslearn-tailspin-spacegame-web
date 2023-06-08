@@ -33,7 +33,7 @@ steps:
   inputs:
     verbose: false
 
-- script: './node_modules/.bin/node-sass $(wwwrootdir) --output $(wwwrootdir)'  #运行ubuntu虚拟机上'./node_modules/.bin/'目录下的 node-sass命令，用于将 sass转换为 css
+- script: './node_modules/.bin/node-sass $(wwwrootdir) --output $(wwwrootdir)'  #运行'ubuntu-20.04'虚拟机上'./node_modules/.bin/'目录下的 node-sass命令，用于将 sass转换为 css
   displayName: 'Compile Sass assets'
 
 - task: gulp@1                      # 运行 gulp命令，用于压缩 js & css
